@@ -1,7 +1,7 @@
 import pytest
-
+import sys
 from datastructures.avltree import AVLTree
-
+sys.setrecursionlimit(1000)
 class TestAVLInserts():
     @pytest.fixture
     def avltree(self) -> AVLTree:

@@ -1,6 +1,5 @@
 
 from __future__ import annotations  
-from dataclasses import dataclass
 from collections import deque
 from typing import Callable, Generic, List, Optional, Sequence, Tuple
 from datastructures.iavltree import IAVLTree, K,V
@@ -50,21 +49,22 @@ from datastructures.iavltree import IAVLTree, K,V
 
 class AVLNode(Generic[K, V]):
     def __init__(self, key: K, value: V, left: Optional[AVLNode]= None, right: Optional[AVLNode]=None): 
-        self._key = key  # Initializing the key of the node
-
-
-        self._value = value  # Initializing the value of the node
-
-
-        self._left = left  # Initializing the left child
-
-
-        self._right = right  # Initializing the right child
-
-
+        self._key = key  
+        self._value = value  
+        self._left = left  
+        self._right = right  
         self._height = 1
-
         self._balance_factor = 0
+
+    def __str__(self) -> str:
+        output = f'K: {self._key} V: {self._value} Height: {self._height}'
+        output += ' L: ' +  f'{self._left._key}' if self._left else 'None'
+        output += ' R: ' + f'{self._right._key}' if self._right else 'None'
+
+        return output
+    
+    def __repr__(self) -> str:
+        return str(self)
 
     @property
     def key(self) -> K: 
@@ -104,46 +104,46 @@ class AVLNode(Generic[K, V]):
 class AVLTree(IAVLTree[K,V], Generic[K,V]):
 
     def __init__(self, starting_sequence: Optional[Sequence[Tuple]]=None):
-
-
-        self._root = None #initalizes the root
-
-
-        self.size = 0 #initalizes the size
-
-
-        if starting_sequence: #if starting pair(?) is provided put those in
-
+        self._root = None
+        self.size = 0 
+        if starting_sequence: 
             for key, value in starting_sequence:
-
                 self.insert(key, value)
     
-    def rotate_right(self, root: AVLNode) -> AVLNode:
-        new_root = root.left #make sure new_root exists( is not none) before you continue
-        new_right_subtree = new_root.right
-        new_root.left = root
-        root.right = new_right_subtree
-        root.height = 1 + max(new_root.left.height, new_root.right.height) #fix this line
-        new_root.height = max(new_root.left.height, new_root.right.height) #fix this line
+    def _balance_factor(self, node: AVLNode) -> int:
+        return self._node_height(node._left) - self._node_height(node._right) if node else 0
 
+    def rotate_right(self, node: AVLNode) -> AVLNode:
+        new_root = node._left
 
-        """y = z.left
-        T3 = y.right
+        if not new_root:
+            raise Exception("new_root must exist")
+        right_subtree = new_root._right
+        new_root._right = node
+        node._left = right_subtree
 
-        y.right = z
-        z.left = T3
+        node._height = 1 + max( 
+            self._node_height(node._left),
+            self._node_height(node._right)
+        )
+        new_root._height = 1 + max( 
+            self._node_height(new_root._left),
+            self._node_height(new_root._right)
+        )
 
-        z.height = 1 + max(self.height(z.left), self.height(z.right))
-        y.height = 1 + max(self.height(y.left), self.height(y.right))
+        return new_root
+    def rotate_left(self, node: AVLNode) -> AVLNode:
+        new_root=node._right
+        if not new_root:
+            raise Exception("new_root should exist")#make sure new_root exists( is not none) before you continue
+        new_left_subtree = new_root._left
+        new_root.left = node
+        node._right = new_left_subtree
+        node._height = 1 + max(self._node_height(node._left), self._node_height(node._right))
+        new_root._height = 1 + max(self._node_height(new_root._left), self._node_height(new_root._right))
 
-        return y"""
-    def rotate_left(self, root: AVLNode) -> AVLNode:
-        new_root = root.right #make sure new_root exists( is not none) before you continue
-        new_left_subtree = new_root.left
-        new_root.left = root
-        root.right = new_left_subtree
-        root.height = 1 + max(new_root.left.height, new_root.right.height)
-        new_root.height = max(new_root.left.height, new_root.right.height)
+        return new_root
+
     
     def _balance_tree(self,node) -> AVLNode:
         #if LL issue:
@@ -222,51 +222,176 @@ class AVLTree(IAVLTree[K,V], Generic[K,V]):
         
         
         #return the balanced tree- which could be a list or something else
-        
-        """#code from geeks for geeks website
-        root.height = 1 + max(self.height(root.left), self.height(root.right))
-        balance = self.balance(root)
-
-        # Left rotation
-        if balance > 1 and value < root.left.value:
-            return self.right_rotate(root)
-
-        # Right rotation
-        if balance < -1 and value > root.right.value:
-            return self.left_rotate(root)
-
-        # Left-Right rotation
-        if balance > 1 and value > root.left.value:
-            root.left = self.left_rotate(root.left)
-            return self.right_rotate(root)
-
-        # Right-Left rotation
-        if balance < -1 and value < root.right.value:
-            root.right = self.right_rotate(root.right)
-            return self.left_rotate(root)
-
-        return root"""
-
-                
-            
-            
-        #raise NotImplementedError
 
     def search(self, key: K) -> V | None:
-        
-        raise NotImplementedError
+        return self.search_helper(self._root, key)
+
+    def search_helper(self, node: Optional[AVLNode], key: K) -> Optional[V]:
+        if node is None:  
+            return None
+        elif node._key == key: 
+            return node._value
+        elif key < node._key:
+            self.search_helper(node._left, key)
+        else: 
+            self.search_helper(node._right, key)
+
 
     def delete(self, key: K) -> None:
         #once a node is deleted, then you have to check the balance factor to make sure
         #that it is in the set. If not, then call another function to balance it?
         #should search be used to find the node before trying to delete it?
+        self.root = self.delete_helper(self.root, key)
+
+    def delete_helper(self, node: Optional[AVLNode], key: K) -> AVLNode | None:
+
+        if node is None:  
+            raise KeyError(f"Key {key} not found")
+
+        elif key < node.key:  
+            node._left = self.delete_helper(node._left, key)
+
+        elif key > node.key:  
+            node._right = self.delete_helper(node._right, key)
+
+        else:  
+            if node._left is None and node._right is None:  
+                return None  
+            elif node._left is None:  
+                node = node._right
+            elif node._right is None:  
+                node = node._left
+            else:
+                successor = self.find_min(node._right)
+                node._key = successor.key 
+                node._value = successor.value
+                node._right = self.delete_helper(
+                    node._right, successor._key)  
+
+        node.height = 1 + max(node._left._height if node._left else 0,
+                          node._right._height if node._right else 0) - 1
+
+        if (node._left._height if node._left else 0) - (node._right._height if node._right else 0) > 1:
+            left_child = node._left  
+            right_child = node._right
+
+            if (left_child._left._height if left_child._left else 0) - (left_child._right._height if left_child._right else 0) >= 0:
+                return self.rotate_right(node)
+            else:  
+                node._left = self.rotate_left(left_child)
+                return self.rotate_right(node)
+
+        elif (node._left._height if node._left else 0) - (node._right._height if node._right else 0) < -1:
+            left_child = node._left
+            right_child = node._right
+            if (right_child._left._height if right_child._left else 0) - (right_child._right._height if right_child._right else 0) <= 0:
+                return self.rotate_left(node)
+            else:
+                node._right = self.rotate_right(right_child)
+                return self.rotate_left(node)
+
+        return node
 
 
-        raise NotImplementedError
+    def find_min(self, node: AVLNode) -> AVLNode:
+        while node._left is not None:
+            node = node._left 
+        return node
+
+
+    def inorder(self, visit: Optional[Callable[[V], None]] = None) -> List[K]:
+        keys = []  
+        self.inorder_helper(self._root, keys)
+        return keys
+
+    def inorder_helper(self, node: Optional[AVLNode], keys: List[K]) -> None:
+        if node is None:  
+            return None
+
+        self.inorder_helper(node._left, keys)
+
+        keys.append(node._key)  
+
+        self.inorder_helper(node._right, keys)
+
+
+    def preorder(self, visit: Optional[Callable[[V], None]] = None) -> List[K]:
+        keys = [] 
+        self.preorder_helper(self._root, keys)
+        return keys
+
+    def preorder_helper(self, node: Optional[AVLNode], keys: List[K]) -> None:
+        if node is None: 
+            return None
+        keys.append(node._key) 
+        self.preorder_helper(node._left, keys)  
+        self.preorder_helper(node._right, keys)  
+
+    def postorder(self, visit: Optional[Callable[[V], None]] = None) -> List[K]:
+        keys = [] 
+        self.postorder_helper(self._root, keys)
+        return keys
+
+    def postorder_helper(self, node: Optional[AVLNode], keys: List[K]) -> None:
+        if node is None:  
+            return None
+        self.postorder_helper(node._left, keys)
+        self.postorder_helper(node._right, keys)
+        keys.append(node._key)
+
+    """def bforder(self, visit: Optional[Callable[[V], None]] = None) -> List[K]:
+        keys = []  
+        queue = []  
+        self.bforder_helper(queue, self._root, keys)
+        return keys
+
+    def bforder_helper(self, queue:  List[Optional[AVLNode]], node: Optional[AVLNode], keys: List[K]) -> None:
+        if node is not None:  
+            queue.append(node)
+        
+        while queue:  
+            current = queue[0]  
+            keys.append(current._key)  
+            queue = queue[1:]  
+            
+            if current._left is not None:  
+                queue.append(current._left)
+            if current._right is not None:  
+                queue.append(current._right)"""
+
+
+    def size(self) -> int:
+        return self.size_helper(self.root)
+
+    def size_helper(self, node: Optional[AVLNode]) -> int:
+        if node is None: 
+            return 0
+
+        return 1 + self.size_helper(node._left) + self.size_helper(node._right)
+
+
+    def __str__(self) -> str:
+        def draw_tree(node: Optional[AVLNode], level: int = 0) -> None:
+            if not node:
+                return
+            draw_tree(node._right, level + 1)
+            level_outputs.append(f'{" " * 4 * level} -> {str(node._value)}')
+            draw_tree(node._left, level + 1)
+        level_outputs: List[str] = []
+        draw_tree(self._root)
+        return '\n'.join(level_outputs)
+
+
+    def __repr__(self) -> str:
+        descriptions = ['Breadth First: ',
+                        'In-order: ', 'Pre-order: ', 'Post-order: ']
+        traversals = [self.bforder(), self.inorder(),
+                      self.preorder(), self.postorder()]
+        return f'{"\n".join([f'{desc} {"".join(str(trav))}' for desc, trav in zip(descriptions, traversals)])}\n\n{str(self)}'
 
     def inorder(self, visit: Callable[[V], None] | None = None) -> List[K]:
         def _inorder(node: Optional[AVLNode]) -> AVLNode:
-            if not node: #if the node does not exist
+            if not node: 
                 return
             _inorder(node.left)
             if visit:
@@ -325,11 +450,6 @@ class AVLTree(IAVLTree[K,V], Generic[K,V]):
             if node.right:
                 queue.append(node.right)
         return keys
-
-    def size(self) -> int:
-       
-       
-        raise NotImplementedError
 
 
     def __str__(self) -> str:
