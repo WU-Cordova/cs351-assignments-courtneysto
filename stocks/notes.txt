@@ -1,0 +1,7 @@
+This is just for some notes about the assignment.
+
+For the high, we dont want to have to rewrite the tree, instead we would want to give the 
+bottom 5 and then the top5 based on the low, so that we dont have to completley restructure
+everything.
+
+
