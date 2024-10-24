@@ -70,23 +70,15 @@ class StockManager:
         ]
 
         for stock in stocks:
-            #idk make the tree
-
-
-class IntervalNode:
-    def __init__(self, stock: Stock) -> None:
-        self.stock: Stock = stock
-        # AVL tree to manage intervals
-        self._intervals: AVLTree[int, Tuple[int, int]] = AVLTree() 
-
-    def add_interval(self, low: int, high: int) -> None:
-      	# Insert the interval into the AVL tree
-        self._intervals.insert(low, (low, high))  
+            self._interval_tree.insert(stock)
 
 
 
 def main():
     tree = AVLTree()
+    itree = IntervalTree()
+    itree.insert('meow',12,13,8.1)
+    itree
     print("Hi!!!")
 
 if __name__ == "__main__":
